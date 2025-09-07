@@ -73,9 +73,11 @@ The following tools/packages **MUST** be used for code quality and formatting:
 
 ---
 
-### ode Organization
+### Code Organization
 
 - **O-1 (MUST)** Place code in `packages/shared` only if used by ≥ 2 packages.
+- **O-2 (MUST)** Follow Clean code architecture
+- **O-3 (MUST)** follow a feature folder structure
 
 ---
 

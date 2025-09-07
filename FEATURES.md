@@ -8,6 +8,10 @@ TODO's should be persisted to the database behind the scenes without the user ha
 
 ##\ FEATURE Checklist
 
+# Design
+
+You **MUST** refer to ![This Design](.designs/Theme_Design.png) for the general theme that should be followed when building the web pages and UI components.
+
 # In Progress
 
 Features here should be implemented and an update with [X] to indicate the feature has been implemented:
@@ -30,3 +34,4 @@ Features are expected to be implemented in the future but should not be implemen
 - [ ] Add deadlines to certain TODO items.
 - [ ] Send notifications via x days/hours before the TODO item's deadline date. the notification days/hour trigger should be configurable via a users settings page.
 - [ ] Add observability i.e. loggging/tracing/metrics.
+- [ ] Extend support for mobile native iOS/Android
