@@ -1,0 +1,26 @@
+# Development Dockerfile for hot reloading
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Install dependencies
+COPY package.json package-lock.json ./
+RUN npm install --ignore-scripts
+
+# Copy source code
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+EXPOSE 3000
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Start the development server (running as root for development convenience)
+CMD ["npm", "run", "dev"]

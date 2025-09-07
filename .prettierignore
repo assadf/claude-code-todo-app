@@ -1,0 +1,11 @@
+node_modules
+.next
+.vercel
+.env*
+*.log
+.git
+dist
+build
+coverage
+prisma/migrations
+.claude
