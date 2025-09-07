@@ -1,0 +1,31 @@
+version: '3.8'
+
+# Production override - use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+services:
+  app:
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  mongodb:
+    # Remove port exposure for production security
+    ports: []
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_root_username
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_root_password
+    secrets:
+      - mongo_root_username
+      - mongo_root_password
+
+secrets:
+  mongo_root_username:
+    external: true
+  mongo_root_password:
+    external: true

@@ -46,12 +46,15 @@ The following tools/packages **MUST** be used for code quality and formatting:
 
 - **C-1 (MUST)** Follow TDD: scaffold stub -> write failing test -> implement.
 - **C-2 (MUST)** Name functions with existing domain vocabulary for consistency.
-- **C-3 (SHOULD NOT)** Introduce classes when small testable functions suffice.
-- **C-4 (SHOULD)** Prefer simple, composable, testable functions.
-- **C-5 (MUST)** Use `import type { … }` for type-only imports.
-- **C-6 (SHOULD NOT)** Add comments except for critical caveats; rely on self‑explanatory code.
-- **C-7 (SHOULD)** Default to `type`; use `interface` only when more readable or interface merging is required.
-- **C-8 (SHOULD NOT)** Extract a new function unless it will be reused elsewhere, is the only way to unit-test otherwise untestable logic, or drastically improves readability of an opaque block.
+- **C-3 (MUST)** All secrets to go in a .env (.env.local for local development) Never hardcode secrets.
+- **C-4 (MUST)** All configurations to go in a (.env.local for local development). Never hardcode configuration.
+- **C-5 (MUST)** Build applications with the appropriate setup that is optimised to run in Docker for local development and also optimised to run in Docker for production environments.
+- **C-6 (SHOULD NOT)** Introduce classes when small testable functions suffice.
+- **C-7 (SHOULD)** Prefer simple, composable, testable functions.
+- **C-8 (MUST)** Use `import type { … }` for type-only imports.
+- **C-9 (SHOULD NOT)** Add comments except for critical caveats; rely on self‑explanatory code.
+- **C-10 (SHOULD)** Default to `type`; use `interface` only when more readable or interface merging is required.
+- **C-11 (SHOULD NOT)** Extract a new function unless it will be reused elsewhere, is the only way to unit-test otherwise untestable logic, or drastically improves readability of an opaque block.
 
 ---
 
