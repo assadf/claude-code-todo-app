@@ -419,3 +419,5 @@ FodyWeavers.xsd
 
 .next
 .swc
+
+tsconfig.tsbuildinfo
