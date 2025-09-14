@@ -49,7 +49,7 @@ export default function SignInPage() {
               </svg>
             </div>
             <h2 className="mb-2 text-3xl font-bold text-white">
-              Welcome to Claude Code TODO
+              Welcome to Claude Code TODO - Fixed!
             </h2>
             <p className="text-gray-400">
               Sign in to manage your tasks and stay organized
@@ -91,7 +91,7 @@ export default function SignInPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-400">
               By signing in, you agree to our terms of service and privacy
               policy
             </p>
