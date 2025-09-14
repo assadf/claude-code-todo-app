@@ -9,7 +9,7 @@ services:
       - '3000:3000'
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=mongodb://mongodb:27017/claude-todo-app
+      - DATABASE_URL=mongodb://mongodb:27017/claude-todo-app?replicaSet=rs0
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET environment variable is required}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID environment variable is required}
@@ -43,11 +43,12 @@ services:
     image: mongo:7.0
     container_name: claude-todo-mongodb
     # Remove exposed ports for production security - only accessible via internal network
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     environment:
       - MONGO_INITDB_DATABASE=claude-todo-app
     volumes:
       - mongodb_data:/data/db
-      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./docker/mongo-replica-init.js:/docker-entrypoint-initdb.d/mongo-replica-init.js:ro
     networks:
       - todo-network
     restart: unless-stopped
@@ -55,8 +56,8 @@ services:
       test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--quiet"]
       interval: 30s
       timeout: 5s
-      start_period: 10s
-      retries: 3
+      start_period: 15s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -76,7 +77,7 @@ services:
       - '27017:27017'  # Expose MongoDB for development debugging
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=mongodb://mongodb:27017/claude-todo-app
+      - DATABASE_URL=mongodb://mongodb:27017/claude-todo-app?replicaSet=rs0
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-development-secret-key}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID environment variable is required}
@@ -109,6 +110,42 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: claude-todo-mongo-express
+    ports:
+      - '8081:8081'
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=false
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=claude-todo-app
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
+      - ME_CONFIG_SITE_BASEURL=/
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - todo-network
+    restart: unless-stopped
+    profiles:
+      - dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 volumes:
   mongodb_data:
