@@ -17,6 +17,7 @@ You **MUST** refer to ![This Design](.designs/Theme_Design.png) for the general 
 Features here should be implemented and an update with [X] to indicate the feature has been implemented:
 
 - [ ] User is able Login (using OAuth/JWT) via Google Login and is redirected to the todo page/dashboard (empty for now) which will contain a list of Active TODO's and completed TODO lists.
+- [ ] User is able to Logout and is redirected to Signin Page.
 
 # Planned
 

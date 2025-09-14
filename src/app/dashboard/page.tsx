@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { SignOutButton } from '@/components/SignOutButton';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -12,13 +13,16 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-dark-900 p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold text-white">
-            Welcome back, {session.user.name || session.user.email}!
-          </h1>
-          <p className="text-gray-400">
-            Manage your TODO lists and stay organized
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="mb-2 text-3xl font-bold text-white">
+              Welcome back, {session.user.name || session.user.email}!
+            </h1>
+            <p className="text-gray-400">
+              Manage your TODO lists and stay organized
+            </p>
+          </div>
+          <SignOutButton />
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
