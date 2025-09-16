@@ -16,7 +16,7 @@ The following tech **MUST** be used in this application:
   - API & Data Fetching: SWR
   - Authentication: next-auth
   - Utility: classnames
-  - ORM: Prisma
+  - ORM: Mongoose
   - Unit/Integration Testing: JEST
   - E2E Testing: Playwright
 - Database: MongoDb
@@ -29,7 +29,7 @@ The following tools/packages **MUST** be used for code quality and formatting:
 - ESLint
 - TypeScript
 - Stylint
-- Husy
+- Husky
 - lint-staged
 
 ## Implementation Best Practices

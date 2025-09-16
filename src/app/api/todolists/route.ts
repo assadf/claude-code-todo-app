@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import connectDB from '@/lib/mongoose';
+import { TodoList } from '@/models/TodoList';
 import type { CreateTodoListData } from '@/types';
 
 // Zod schema for input validation
@@ -16,6 +17,9 @@ const createTodoListSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Connect to database
+    await connectDB();
+
     // Check authentication
     const session = await getServerSession(authOptions);
 
@@ -58,12 +62,10 @@ export async function POST(request: NextRequest) {
     const { name, description } = validationResult.data;
 
     // Create todo list in database
-    const todoList = await prisma.todoList.create({
-      data: {
-        name,
-        description: description || undefined,
-        userId: session.user.id,
-      },
+    const todoList = await TodoList.create({
+      name,
+      description: description || undefined,
+      userId: session.user.id,
     });
 
     return NextResponse.json(
@@ -88,6 +90,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // Connect to database
+    await connectDB();
+
     // Check authentication
     const session = await getServerSession(authOptions);
 
@@ -102,25 +107,30 @@ export async function GET() {
     }
 
     // Fetch todo lists for the user
-    const todoLists = await prisma.todoList.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      include: {
-        _count: {
-          select: {
-            todoItems: true,
+    const todoLists = await TodoList.find({
+      userId: session.user.id,
+    }).sort({ createdAt: -1 });
+
+    // Add todo item count to each todo list
+    const todoListsWithCount = await Promise.all(
+      todoLists.map(async todoList => {
+        const { TodoItem } = await import('@/models/TodoItem');
+        const itemCount = await TodoItem.countDocuments({
+          todoListId: todoList._id.toString(),
+        });
+
+        return {
+          ...todoList.toJSON(),
+          _count: {
+            todoItems: itemCount,
           },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        };
+      })
+    );
 
     return NextResponse.json(
       {
-        data: todoLists,
+        data: todoListsWithCount,
         message: 'TodoLists fetched successfully',
       },
       { status: 200 }
