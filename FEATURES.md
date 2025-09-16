@@ -18,7 +18,7 @@ Features here should be implemented and an update with [X] to indicate the featu
 
 - [x] User is able Login (using OAuth/JWT) via Google Login and is redirected to the todo page/dashboard (empty for now) which will contain a list of Active TODO's and completed TODO lists.
 - [x] User is able to Logout and is redirected to Signin Page.
-- [ ] Logged in user is able to create and name a new TODO list.
+- [x] Logged in user is able to create and name a new TODO list.
 
 # Planned
 
