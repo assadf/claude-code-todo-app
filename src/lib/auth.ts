@@ -1,10 +1,14 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import { prisma } from './prisma';
+import crypto from 'crypto';
+
+// Helper function to generate a consistent MongoDB ObjectID from Google ID
+function generateObjectIdFromGoogleId(googleId: string): string {
+  const hash = crypto.createHash('md5').update(googleId).digest('hex');
+  return hash.substring(0, 24); // ObjectID is 24 character hex string
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -17,21 +21,24 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      if (session.user && token.googleId) {
+        // Generate consistent ObjectID from Google ID
+        session.user.id = generateObjectIdFromGoogleId(
+          token.googleId as string
+        );
       }
       return session;
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+    async jwt({ token, account, profile }) {
+      if (account && account.providerAccountId) {
+        token.googleId = account.providerAccountId;
       }
       return token;
     },
   },
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

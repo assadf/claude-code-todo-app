@@ -16,14 +16,14 @@ You **MUST** refer to ![This Design](.designs/Theme_Design.png) for the general 
 
 Features here should be implemented and an update with [X] to indicate the feature has been implemented:
 
-- [ ] User is able Login (using OAuth/JWT) via Google Login and is redirected to the todo page/dashboard (empty for now) which will contain a list of Active TODO's and completed TODO lists.
-- [ ] User is able to Logout and is redirected to Signin Page.
+- [x] User is able Login (using OAuth/JWT) via Google Login and is redirected to the todo page/dashboard (empty for now) which will contain a list of Active TODO's and completed TODO lists.
+- [x] User is able to Logout and is redirected to Signin Page.
+- [ ] Logged in user is able to create and name a new TODO list.
 
 # Planned
 
 Features are expected to be implemented in the future but should not be implemented until they are moved to the In Progress list.
 
-- [ ] Logged in user is able to create and name a new TODO list.
 - [ ] Logged in User is able add TODO items to the list.
 - [ ] Logged in User is able remove TODO items from the list.
 - [ ] Logged in User is able complete TODO items in the list.
