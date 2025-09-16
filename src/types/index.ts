@@ -1,9 +1,58 @@
-import type { User, TodoList, TodoItem, Priority } from '@prisma/client';
+// Since we're using MongoDB directly, we'll define these types manually
+// instead of importing from Prisma
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export type { User, TodoList, TodoItem, Priority };
+export interface TodoList {
+  id: string;
+  name: string;
+  description?: string;
+  isCompleted: boolean;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TodoItem {
+  id: string;
+  title: string;
+  description?: string;
+  isCompleted: boolean;
+  priority: Priority;
+  dueDate?: Date;
+  todoListId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
 
 export interface TodoListWithItems extends TodoList {
   todoItems: TodoItem[];
+  _count?: {
+    todoItems: number;
+  };
+}
+
+// MongoDB Response Type for API
+export interface MongoTodoList {
+  _id: string;
+  name: string;
+  description?: string;
+  isCompleted: boolean;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
   _count?: {
     todoItems: number;
   };

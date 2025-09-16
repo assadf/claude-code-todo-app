@@ -57,10 +57,11 @@ export const useTodoStore = create<TodoStore>()(
           ),
 
         updateTodoList: (id, data) =>
+          // TODO: Fix type issues with Prisma vs MongoDB types
           set(
             state => ({
               todoLists: state.todoLists.map(list =>
-                list.id === id ? { ...list, ...data } : list
+                (list as any).id === id ? { ...list, ...data } : list
               ),
             }),
             false,
@@ -70,7 +71,9 @@ export const useTodoStore = create<TodoStore>()(
         deleteTodoList: id =>
           set(
             state => ({
-              todoLists: state.todoLists.filter(list => list.id !== id),
+              todoLists: state.todoLists.filter(
+                list => (list as any).id !== id
+              ),
               currentListId:
                 state.currentListId === id ? null : state.currentListId,
             }),
@@ -82,7 +85,7 @@ export const useTodoStore = create<TodoStore>()(
           set(
             state => ({
               todoLists: state.todoLists.map(list =>
-                list.id === listId
+                (list as any).id === listId
                   ? { ...list, todoItems: [...list.todoItems, item] }
                   : list
               ),
