@@ -71,7 +71,7 @@ export interface CreateTodoItemData {
   title: string;
   description?: string;
   priority?: Priority;
-  dueDate?: Date | null;
+  dueDate?: Date;
 }
 
 export interface UpdateTodoItemData {
@@ -79,7 +79,7 @@ export interface UpdateTodoItemData {
   description?: string;
   isCompleted?: boolean;
   priority?: Priority;
-  dueDate?: Date | null;
+  dueDate?: Date;
 }
 
 export interface DashboardStats {
