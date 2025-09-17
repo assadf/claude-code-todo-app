@@ -1,6 +1,6 @@
 # Install dependencies only when needed
 FROM node:18-alpine AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -9,13 +9,11 @@ RUN npm ci --omit=dev --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM node:18-alpine AS builder
-RUN apk add --no-cache openssl
+RUN apk add --no-cache
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
 
 # Build the application
 RUN npm run build
@@ -27,8 +25,8 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install curl for health checks, OpenSSL for Prisma, and update packages for security
-RUN apk add --no-cache curl openssl && \
+# Install curl for health checks and update packages for security
+RUN apk add --no-cache curl && \
     apk update && \
     apk upgrade
 

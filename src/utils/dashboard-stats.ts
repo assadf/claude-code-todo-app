@@ -68,28 +68,28 @@ export function getDashboardStatCards(stats: DashboardStats): StatCard[] {
       label: 'Total Lists',
       value: stats.totalTodoLists,
       icon: 'clipboard',
-      bgColor: 'bg-blue-600',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-700',
     },
     {
       id: 'completed-lists',
       label: 'Completed',
       value: stats.completedTodoLists,
       icon: 'check-circle',
-      bgColor: 'bg-green-600',
+      bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
     },
     {
       id: 'active-lists',
       label: 'In Progress',
       value: stats.activeTodoLists,
       icon: 'clock',
-      bgColor: 'bg-orange-600',
+      bgColor: 'bg-gradient-to-br from-orange-500 to-orange-700',
     },
     {
       id: 'total-tasks',
       label: 'Total Tasks',
       value: stats.totalTodoItems,
       icon: 'lightning',
-      bgColor: 'bg-purple-600',
+      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-700',
     },
   ];
 }

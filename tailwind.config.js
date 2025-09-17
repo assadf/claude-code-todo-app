@@ -5,6 +5,17 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'bg-gradient-to-br',
+    'from-purple-500',
+    'to-purple-700',
+    'from-emerald-500',
+    'to-emerald-700',
+    'from-orange-500',
+    'to-orange-700',
+    'from-blue-500',
+    'to-blue-700',
+  ],
   darkMode: 'class',
   theme: {
     extend: {
