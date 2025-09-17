@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { useTodoStore, useTodoSelectors } from '../todo-store';
 import type { TodoListWithItems } from '@/types';
+import { Priority } from '@/types';
 
 // Mock Zustand's persist middleware
 jest.mock('zustand/middleware', () => ({
@@ -22,8 +23,8 @@ const mockTodoList: TodoListWithItems = {
       title: 'Test Item',
       description: 'Test Item Description',
       isCompleted: false,
-      priority: 'MEDIUM',
-      dueDate: null,
+      priority: Priority.MEDIUM,
+      dueDate: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
       todoListId: '1',

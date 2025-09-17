@@ -1,8 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTodoList } from '@/hooks/use-todo-list';
-import type { MongoTodoList } from '@/types';
+import { useTodoItems } from '@/hooks/use-todo-items';
+import TodoItemForm from '@/components/forms/TodoItemForm';
+import TodoItemDisplay from '@/components/ui/TodoItemDisplay';
+import type { MongoTodoList, CreateTodoItemData } from '@/types';
 
 interface TodoListDetailPageProps {
   params: { id: string };
@@ -108,46 +112,71 @@ function TodoListHeader({ todoList }: TodoListHeaderProps) {
   );
 }
 
-function EmptyState() {
+interface TodoItemsSectionProps {
+  todoListId: string;
+}
+
+function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
+  const {
+    todoItems,
+    isLoading: itemsLoading,
+    error: itemsError,
+    addTodoItem,
+  } = useTodoItems(todoListId);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleAddTodoItem = async (data: CreateTodoItemData) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await addTodoItem(data);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to add todo item';
+      setSubmitError(errorMessage);
+      throw error; // Re-throw to let form handle it
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="card p-12 text-center">
-      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-blue-600">
-        <svg
-          className="h-10 w-10 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-      </div>
-      <h3 className="mb-2 text-xl font-semibold text-white">
-        No TODO items yet
-      </h3>
-      <p className="mb-6 text-gray-400">
-        Add your first TODO item to get started
-      </p>
-      <button className="btn-primary">
-        <svg
-          className="mr-2 h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-        Add TODO Item
-      </button>
+    <div className="space-y-6">
+      {/* Add Todo Item Form */}
+      <TodoItemForm
+        onSubmit={handleAddTodoItem}
+        isLoading={isSubmitting}
+        error={submitError}
+      />
+
+      {/* Todo Items Display */}
+      {itemsError ? (
+        <div className="card p-6 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-600">
+            <svg
+              className="h-6 w-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-white">
+            Failed to load todo items
+          </h3>
+          <p className="text-sm text-gray-400">{itemsError.message}</p>
+        </div>
+      ) : (
+        <TodoItemDisplay todoItems={todoItems} isLoading={itemsLoading} />
+      )}
     </div>
   );
 }
@@ -261,9 +290,6 @@ export default function TodoListDetailPage({
     return null;
   }
 
-  const hasNoItems =
-    !todoList._count?.todoItems || todoList._count.todoItems === 0;
-
   return (
     <div className="min-h-screen bg-dark-900 p-8">
       <div className="mx-auto max-w-4xl">
@@ -297,35 +323,11 @@ export default function TodoListDetailPage({
 
         {/* Todo Items Section */}
         <div>
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6">
             <h2 className="text-xl font-semibold text-white">TODO Items</h2>
-            <button className="btn-primary">
-              <svg
-                className="mr-2 h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              Add TODO Item
-            </button>
           </div>
 
-          {hasNoItems ? (
-            <EmptyState />
-          ) : (
-            <div className="card p-6">
-              <p className="text-center text-gray-400">
-                TODO items will be displayed here once implemented
-              </p>
-            </div>
-          )}
+          <TodoItemsSection todoListId={params.id} />
         </div>
       </div>
     </div>

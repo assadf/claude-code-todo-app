@@ -24,7 +24,7 @@ Your core responsibilities include:
 - Ensure proper CSRF protection and security headers
 
 **Database Integration:**
-- Design and implement MongoDB schemas using Prisma ORM
+- Design and implement MongoDB schemas using mongoose ORM
 - Write efficient database queries and handle connection management
 - Implement proper data validation and sanitization
 - Design database migrations and seed scripts

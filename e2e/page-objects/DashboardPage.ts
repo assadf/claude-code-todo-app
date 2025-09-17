@@ -87,4 +87,11 @@ export class DashboardPage {
   async signOut(): Promise<void> {
     await this.signOutButton.click();
   }
+
+  /**
+   * Wait for network requests to complete
+   */
+  async waitForNetworkIdle(): Promise<void> {
+    await this.page.waitForLoadState('networkidle');
+  }
 }
