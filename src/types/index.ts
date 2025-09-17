@@ -89,3 +89,28 @@ export interface DashboardStats {
   totalTodoItems: number;
   completedTodoItems: number;
 }
+
+// Response type for GET /api/todo-lists/[id]
+export interface TodoListWithItemsResponse {
+  _id: string;
+  name: string;
+  description?: string;
+  isCompleted: boolean;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  todoItems: {
+    _id: string;
+    title: string;
+    description?: string;
+    isCompleted: boolean;
+    priority: Priority;
+    dueDate?: string;
+    todoListId: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  _count: {
+    todoItems: number;
+  };
+}

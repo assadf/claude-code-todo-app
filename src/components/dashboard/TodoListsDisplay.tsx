@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTodoLists } from '@/hooks/use-todo-lists';
 import type { MongoTodoList } from '@/types';
 
@@ -8,6 +9,8 @@ interface TodoListCardProps {
 }
 
 function TodoListCard({ todoList }: TodoListCardProps) {
+  const router = useRouter();
+
   const formatDate = (date: string | Date) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
@@ -15,6 +18,10 @@ function TodoListCard({ todoList }: TodoListCardProps) {
       day: 'numeric',
       year: 'numeric',
     });
+  };
+
+  const handleViewDetails = () => {
+    router.push(`/todo-lists/${todoList._id}`);
   };
 
   const getStatusBadge = (isCompleted: boolean) => {
@@ -95,7 +102,10 @@ function TodoListCard({ todoList }: TodoListCardProps) {
           </div>
         </div>
 
-        <button className="rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700">
+        <button
+          onClick={handleViewDetails}
+          className="rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700"
+        >
           View Details
         </button>
       </div>
