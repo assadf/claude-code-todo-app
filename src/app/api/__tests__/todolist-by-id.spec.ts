@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { GET } from '../todo-lists/[id]/route';
+import { GET } from '../todolists/[id]/route';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import connectDB from '@/lib/mongoose';
@@ -29,7 +29,7 @@ const mockTodoItemFind = TodoItem.find as jest.MockedFunction<
   typeof TodoItem.find
 >;
 
-describe('/api/todo-lists/[id]', () => {
+describe('/api/todolists/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -113,7 +113,7 @@ describe('/api/todo-lists/[id]', () => {
       mockTodoItemFind.mockResolvedValue(mockTodoItems);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },
@@ -174,7 +174,7 @@ describe('/api/todo-lists/[id]', () => {
       mockTodoItemFind.mockResolvedValue([]);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },
@@ -191,7 +191,7 @@ describe('/api/todo-lists/[id]', () => {
       mockGetServerSession.mockResolvedValue(null);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },
@@ -213,7 +213,7 @@ describe('/api/todo-lists/[id]', () => {
       mockGetServerSession.mockResolvedValue(mockSession);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/invalid-id'
+        'http://localhost:3000/api/todolists/invalid-id'
       );
       const response = await GET(request, { params: { id: 'invalid-id' } });
       const responseData = await response.json();
@@ -234,7 +234,7 @@ describe('/api/todo-lists/[id]', () => {
       mockTodoListFindById.mockResolvedValue(null);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },
@@ -264,7 +264,7 @@ describe('/api/todo-lists/[id]', () => {
       mockTodoListFindById.mockResolvedValue(todoListOwnedByOtherUser);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },
@@ -291,7 +291,7 @@ describe('/api/todo-lists/[id]', () => {
       );
 
       const request = new NextRequest(
-        'http://localhost:3000/api/todo-lists/507f1f77bcf86cd799439011'
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011'
       );
       const response = await GET(request, {
         params: { id: '507f1f77bcf86cd799439011' },

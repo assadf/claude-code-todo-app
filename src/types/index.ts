@@ -90,7 +90,7 @@ export interface DashboardStats {
   completedTodoItems: number;
 }
 
-// Response type for GET /api/todo-lists/[id]
+// Response type for GET /api/todolists/[id]
 export interface TodoListWithItemsResponse {
   _id: string;
   name: string;
