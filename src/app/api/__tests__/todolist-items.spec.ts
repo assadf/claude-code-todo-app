@@ -94,7 +94,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(201);
       const responseData = await response.json();
@@ -149,7 +148,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(201);
       expect(mockTodoItemCreate).toHaveBeenCalledWith({
@@ -180,7 +178,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(401);
       const responseData = await response.json();
@@ -213,7 +210,6 @@ describe('/api/todolists/[id]/items', () => {
       );
 
       const response = await POST(request, { params: { id: 'invalid-id' } });
-      await response.json();
 
       expect(response.status).toBe(400);
       const responseData = await response.json();
@@ -249,7 +245,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(404);
       const responseData = await response.json();
@@ -292,7 +287,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(403);
       const responseData = await response.json();
@@ -330,7 +324,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(400);
       const responseData = await response.json();
@@ -370,7 +363,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(400);
       const responseData = await response.json();
@@ -411,7 +403,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(400);
       const responseData = await response.json();
@@ -445,7 +436,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(400);
       const responseData = await response.json();
@@ -483,7 +473,6 @@ describe('/api/todolists/[id]/items', () => {
       const response = await POST(request, {
         params: { id: '507f1f77bcf86cd799439011' },
       });
-      await response.json();
 
       expect(response.status).toBe(500);
       const responseData = await response.json();

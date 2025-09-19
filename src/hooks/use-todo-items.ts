@@ -75,11 +75,37 @@ export function useTodoItems(todoListId: string | undefined) {
     return result.data;
   };
 
+  const deleteTodoItem = async (itemId: string) => {
+    if (!todoListId) {
+      throw new Error('Todo list ID is required');
+    }
+
+    const response = await fetch(
+      `/api/todolists/${todoListId}/items/${itemId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      throw new Error(errorData.message || 'Failed to delete todo item');
+    }
+
+    const result: ApiResponse<TodoItemResponse> = await response.json();
+
+    // Optimistically update the cache
+    mutate();
+
+    return result.data;
+  };
+
   return {
     todoItems: data || [],
     isLoading,
     error,
     mutate,
     addTodoItem,
+    deleteTodoItem,
   };
 }
