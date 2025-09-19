@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useTodoLists } from '@/hooks/use-todo-lists';
+import { SortDropdown } from '@/components/ui/SortDropdown';
 import type { MongoTodoList } from '@/types';
 
 interface TodoListCardProps {
@@ -166,8 +167,15 @@ function LoadingSkeleton() {
   );
 }
 
-export function TodoListsDisplay() {
-  const { todoLists, isLoading, error } = useTodoLists();
+interface TodoListsDisplayProps {
+  showSortControls?: boolean;
+}
+
+export function TodoListsDisplay({
+  showSortControls = true,
+}: TodoListsDisplayProps) {
+  const { todoLists, isLoading, error, sortOption, setSortOption } =
+    useTodoLists();
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -204,10 +212,24 @@ export function TodoListsDisplay() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {todoLists.map(todoList => (
-        <TodoListCard key={todoList._id} todoList={todoList} />
-      ))}
+    <div className="space-y-6">
+      {/* Sort Controls */}
+      {showSortControls && todoLists && todoLists.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-400">
+            Showing {todoLists.length} todo list
+            {todoLists.length !== 1 ? 's' : ''}
+          </div>
+          <SortDropdown value={sortOption} onChange={setSortOption} />
+        </div>
+      )}
+
+      {/* Todo Lists Grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {todoLists.map(todoList => (
+          <TodoListCard key={todoList._id} todoList={todoList} />
+        ))}
+      </div>
     </div>
   );
 }

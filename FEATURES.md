@@ -25,13 +25,12 @@ Features here should be implemented and an update with [X] to indicate the featu
 - [x] Logged in User is able edit/update TODO items in the list.
 - [x] Logged in User is able complete TODO items in the list.
 - [x] Logged in User is able delete TODO lists.
+- [x] Logged in User is able to to sort TODO lists in the dashboard alphabetically or by most recently updated/created
 
 # Planned
 
 Features are expected to be implemented in the future but should not be implemented until they are moved to the In Progress list.
 
-- [ ] Logged in User is able view Active TODO lists from the main/home page.
-- [ ] Logged in User is able view Completed TODO lists from the main/home page.
 - [ ] Logged in User is able filter TODO list from the main/home page for easier searching.
 
 - [ ] Add deadlines to certain TODO items.
