@@ -24,12 +24,12 @@ Features here should be implemented and an update with [X] to indicate the featu
 - [x] Logged in User is able remove TODO items from the list.
 - [x] Logged in User is able edit/update TODO items in the list.
 - [x] Logged in User is able complete TODO items in the list.
+- [x] Logged in User is able delete TODO lists.
 
 # Planned
 
 Features are expected to be implemented in the future but should not be implemented until they are moved to the In Progress list.
 
-- [ ] Logged in User is able delete TODO lists.
 - [ ] Logged in User is able view Active TODO lists from the main/home page.
 - [ ] Logged in User is able view Completed TODO lists from the main/home page.
 - [ ] Logged in User is able filter TODO list from the main/home page for easier searching.
