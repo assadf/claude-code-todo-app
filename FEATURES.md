@@ -23,7 +23,7 @@ Features here should be implemented and an update with [X] to indicate the featu
 - [x] Logged in User is able add TODO items to the list.
 - [x] Logged in User is able remove TODO items from the list.
 - [x] Logged in User is able edit/update TODO items in the list.
-- [ ] Logged in User is able complete TODO items in the list.
+- [x] Logged in User is able complete TODO items in the list.
 
 # Planned
 
