@@ -1,7 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import type { Priority } from '@/types';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import type { UpdateTodoItemData } from '@/types';
+import { Priority } from '@/types';
+
+const updateTodoItemSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(255, 'Title must be 255 characters or less')
+    .optional(),
+  description: z.string().optional(),
+  priority: z.nativeEnum(Priority).optional(),
+  dueDate: z.string().optional(),
+  isCompleted: z.boolean().optional(),
+});
 
 interface TodoItem {
   _id: string;
@@ -19,6 +35,7 @@ interface TodoItemDisplayProps {
   todoItems: TodoItem[];
   isLoading?: boolean;
   onDeleteItem?: (itemId: string) => Promise<void>;
+  onUpdateItem?: (itemId: string, updates: UpdateTodoItemData) => Promise<void>;
 }
 
 const priorityConfig = {
@@ -64,11 +81,32 @@ function PriorityBadge({ priority }: { priority: Priority }) {
 function TodoItemCard({
   item,
   onDeleteItem,
+  onUpdateItem,
 }: {
   item: TodoItem;
   onDeleteItem?: (itemId: string) => Promise<void>;
+  onUpdateItem?: (itemId: string, updates: UpdateTodoItemData) => Promise<void>;
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  type FormData = z.infer<typeof updateTodoItemSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(updateTodoItemSchema),
+    defaultValues: {
+      title: item.title,
+      description: item.description || '',
+      priority: item.priority,
+      dueDate: item.dueDate ? item.dueDate.split('T')[0] : '',
+    },
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -83,6 +121,62 @@ function TodoItemCard({
   const isOverdue =
     item.dueDate && new Date(item.dueDate) < new Date() && !item.isCompleted;
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    reset({
+      title: item.title,
+      description: item.description || '',
+      priority: item.priority,
+      dueDate: item.dueDate ? item.dueDate.split('T')[0] : '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    reset();
+  };
+
+  const handleUpdate = async (data: FormData) => {
+    if (!onUpdateItem || isUpdating) return;
+
+    setIsUpdating(true);
+    try {
+      const updates: UpdateTodoItemData = {};
+
+      if (data.title !== undefined) updates.title = data.title;
+      if (data.description !== undefined)
+        updates.description = data.description || undefined;
+      if (data.priority !== undefined) updates.priority = data.priority;
+      if (data.dueDate !== undefined && data.dueDate !== '') {
+        updates.dueDate = new Date(data.dueDate);
+      } else if (data.dueDate === '') {
+        updates.dueDate = undefined;
+      }
+      if (data.isCompleted !== undefined)
+        updates.isCompleted = data.isCompleted;
+
+      await onUpdateItem(item._id, updates);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update todo item:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleToggleComplete = async () => {
+    if (!onUpdateItem || isUpdating) return;
+
+    setIsUpdating(true);
+    try {
+      await onUpdateItem(item._id, { isCompleted: !item.isCompleted });
+    } catch (error) {
+      console.error('Failed to toggle todo item completion:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!onDeleteItem || isDeleting) return;
 
@@ -96,6 +190,92 @@ function TodoItemCard({
     }
   };
 
+  if (isEditing) {
+    return (
+      <div className="card border-purple-500 p-4">
+        <form onSubmit={handleSubmit(handleUpdate)} className="space-y-4">
+          {/* Title input */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Title
+            </label>
+            <input
+              {...register('title')}
+              className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              placeholder="Enter task title"
+            />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-400">
+                {errors.title.message}
+              </p>
+            )}
+          </div>
+
+          {/* Description input */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Description
+            </label>
+            <textarea
+              {...register('description')}
+              rows={2}
+              className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              placeholder="Enter task description (optional)"
+            />
+          </div>
+
+          {/* Priority and Due Date */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Priority
+              </label>
+              <select
+                {...register('priority')}
+                className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              >
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Due Date
+              </label>
+              <input
+                type="date"
+                {...register('dueDate')}
+                className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              disabled={isUpdating}
+              className="px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:text-white disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isUpdating ? 'Updating...' : 'Update Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="card p-4 transition-colors hover:border-purple-500">
       <div className="flex items-start justify-between">
@@ -103,11 +283,13 @@ function TodoItemCard({
           {/* Title and completion status */}
           <div className="flex items-center space-x-3">
             <button
+              onClick={handleToggleComplete}
+              disabled={isUpdating}
               className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 transition-colors ${
                 item.isCompleted
                   ? 'border-green-500 bg-green-500'
                   : 'border-gray-400 hover:border-purple-500'
-              }`}
+              } ${isUpdating ? 'cursor-not-allowed opacity-50' : ''}`}
             >
               {item.isCompleted && (
                 <svg
@@ -152,12 +334,42 @@ function TodoItemCard({
         {/* Priority badge and actions */}
         <div className="flex flex-shrink-0 items-center space-x-3">
           <PriorityBadge priority={item.priority} />
+
+          {/* Edit button */}
+          {onUpdateItem && (
+            <button
+              onClick={handleEdit}
+              disabled={isUpdating}
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                isUpdating
+                  ? 'cursor-not-allowed text-gray-600'
+                  : 'text-gray-400 hover:bg-blue-50/10 hover:text-blue-400'
+              }`}
+              title="Edit todo item"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+            </button>
+          )}
+
+          {/* Delete button */}
           {onDeleteItem && (
             <button
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isDeleting || isUpdating}
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                isDeleting
+                isDeleting || isUpdating
                   ? 'cursor-not-allowed text-gray-600'
                   : 'text-gray-400 hover:bg-red-50/10 hover:text-red-400'
               }`}
@@ -256,6 +468,7 @@ export default function TodoItemDisplay({
   todoItems,
   isLoading = false,
   onDeleteItem,
+  onUpdateItem,
 }: TodoItemDisplayProps) {
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -293,7 +506,12 @@ export default function TodoItemDisplay({
   return (
     <div className="space-y-4">
       {sortedItems.map(item => (
-        <TodoItemCard key={item._id} item={item} onDeleteItem={onDeleteItem} />
+        <TodoItemCard
+          key={item._id}
+          item={item}
+          onDeleteItem={onDeleteItem}
+          onUpdateItem={onUpdateItem}
+        />
       ))}
     </div>
   );

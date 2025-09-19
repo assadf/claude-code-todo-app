@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import type { CreateTodoItemData, Priority } from '@/types';
+import type { CreateTodoItemData, UpdateTodoItemData, Priority } from '@/types';
 
 interface TodoItemResponse {
   _id: string;
@@ -75,6 +75,38 @@ export function useTodoItems(todoListId: string | undefined) {
     return result.data;
   };
 
+  const updateTodoItem = async (
+    itemId: string,
+    updates: UpdateTodoItemData
+  ) => {
+    if (!todoListId) {
+      throw new Error('Todo list ID is required');
+    }
+
+    const response = await fetch(
+      `/api/todolists/${todoListId}/items/${itemId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      throw new Error(errorData.message || 'Failed to update todo item');
+    }
+
+    const result: ApiResponse<TodoItemResponse> = await response.json();
+
+    // Optimistically update the cache
+    mutate();
+
+    return result.data;
+  };
+
   const deleteTodoItem = async (itemId: string) => {
     if (!todoListId) {
       throw new Error('Todo list ID is required');
@@ -106,6 +138,7 @@ export function useTodoItems(todoListId: string | undefined) {
     error,
     mutate,
     addTodoItem,
+    updateTodoItem,
     deleteTodoItem,
   };
 }
