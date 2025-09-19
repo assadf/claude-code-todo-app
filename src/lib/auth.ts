@@ -22,7 +22,11 @@ validateNextAuthSecret();
 
 // Helper function to generate a consistent MongoDB ObjectID from Google ID
 function generateObjectIdFromGoogleId(googleId: string): string {
-  const hash = crypto.createHash('md5').update(googleId).digest('hex');
+  // Use SHA-256 with secret salt for cryptographically secure user ID generation
+  const hash = crypto
+    .createHash('sha256')
+    .update(googleId + process.env.NEXTAUTH_SECRET)
+    .digest('hex');
   return hash.substring(0, 24); // ObjectID is 24 character hex string
 }
 
