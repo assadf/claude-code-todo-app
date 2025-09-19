@@ -10,7 +10,7 @@ export function SignOutButton() {
     try {
       setIsLoading(true);
       await signOut({
-        callbackUrl: '/auth/signin',
+        callbackUrl: '/',
       });
     } catch (error) {
       console.error('Sign out error:', error);

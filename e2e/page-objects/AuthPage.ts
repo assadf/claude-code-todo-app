@@ -16,7 +16,7 @@ export class AuthPage {
 
     // Sign in page elements
     this.welcomeHeading = page.getByRole('heading', {
-      name: /welcome to claude code todo/i,
+      name: /claude code todo app/i,
     });
     this.signInDescription = page.getByText(/sign in to manage your tasks/i);
     this.googleSignInButton = page.getByRole('button', {
@@ -34,11 +34,11 @@ export class AuthPage {
   }
 
   async gotoSignIn(): Promise<void> {
-    await this.page.goto('/auth/signin');
+    await this.page.goto('/');
   }
 
   async gotoError(error = 'AccessDenied'): Promise<void> {
-    await this.page.goto(`/auth/error?error=${error}`);
+    await this.page.goto(`/?error=${error}`);
   }
 
   async clickGoogleSignIn(): Promise<void> {

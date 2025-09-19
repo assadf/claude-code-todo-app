@@ -131,7 +131,7 @@ export async function mockAuthEndpoints(
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ url: '/auth/signin' }),
+        body: JSON.stringify({ url: '/' }),
       });
     } else {
       // Let other auth requests through
@@ -145,7 +145,7 @@ export async function mockAuthEndpoints(
  */
 export async function expectAuthenticationRequired(page: Page): Promise<void> {
   // Should redirect to sign in page
-  await page.waitForURL('/auth/signin');
+  await page.waitForURL('/');
 }
 
 /**
@@ -164,7 +164,7 @@ export async function signOutUser(page: Page): Promise<void> {
   }
 
   // Should redirect to sign in page
-  await page.waitForURL('/auth/signin');
+  await page.waitForURL('/');
 }
 
 /**
