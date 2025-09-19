@@ -2,11 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Authentication', () => {
   test('should display sign in page correctly', async ({ page }) => {
-    await page.goto('/auth/signin');
+    await page.goto('/');
 
     // Check the welcome heading
     await expect(
-      page.getByRole('heading', { name: /welcome to claude code todo/i })
+      page.getByRole('heading', { name: /claude code todo app/i })
     ).toBeVisible();
 
     // Check the description
@@ -24,7 +24,7 @@ test.describe('Authentication', () => {
   });
 
   test('should have proper styling on sign in page', async ({ page }) => {
-    await page.goto('/auth/signin');
+    await page.goto('/');
 
     // Check dark theme
     const body = page.locator('body');
@@ -42,7 +42,7 @@ test.describe('Authentication', () => {
   });
 
   test('should display error page correctly', async ({ page }) => {
-    await page.goto('/auth/error?error=AccessDenied');
+    await page.goto('/?error=AccessDenied');
 
     // Check the error heading
     await expect(
@@ -63,16 +63,16 @@ test.describe('Authentication', () => {
     await page.goto('/dashboard');
 
     // Should redirect to sign in page
-    await expect(page).toHaveURL('/auth/signin');
+    await expect(page).toHaveURL('/');
   });
 
   test('should be responsive on mobile devices', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/auth/signin');
+    await page.goto('/');
 
     // Check that elements are still visible and properly arranged
     await expect(
-      page.getByRole('heading', { name: /welcome to claude code todo/i })
+      page.getByRole('heading', { name: /claude code todo app/i })
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /continue with google/i })
