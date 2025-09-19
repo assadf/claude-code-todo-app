@@ -2,6 +2,24 @@ import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import crypto from 'crypto';
 
+// Validate NextAuth secret strength at startup
+function validateNextAuthSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+
+  if (!secret) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required');
+  }
+
+  if (secret.length < 32) {
+    throw new Error(
+      'NEXTAUTH_SECRET must be at least 32 characters long for security. Generate one with: openssl rand -base64 32'
+    );
+  }
+}
+
+// Validate secret on module load
+validateNextAuthSecret();
+
 // Helper function to generate a consistent MongoDB ObjectID from Google ID
 function generateObjectIdFromGoogleId(googleId: string): string {
   const hash = crypto.createHash('md5').update(googleId).digest('hex');
@@ -40,5 +58,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
+  // SECURITY: Strong secret validated at startup - used for JWT signing
   secret: process.env.NEXTAUTH_SECRET,
 };
