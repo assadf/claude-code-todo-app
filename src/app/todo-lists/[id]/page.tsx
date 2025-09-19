@@ -6,7 +6,11 @@ import { useTodoList } from '@/hooks/use-todo-list';
 import { useTodoItems } from '@/hooks/use-todo-items';
 import TodoItemForm from '@/components/forms/TodoItemForm';
 import TodoItemDisplay from '@/components/ui/TodoItemDisplay';
-import type { MongoTodoList, CreateTodoItemData } from '@/types';
+import type {
+  MongoTodoList,
+  CreateTodoItemData,
+  UpdateTodoItemData,
+} from '@/types';
 
 interface TodoListDetailPageProps {
   params: { id: string };
@@ -122,6 +126,7 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
     isLoading: itemsLoading,
     error: itemsError,
     addTodoItem,
+    updateTodoItem,
     deleteTodoItem,
   } = useTodoItems(todoListId);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,6 +146,13 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateTodoItem = async (
+    itemId: string,
+    updates: UpdateTodoItemData
+  ) => {
+    await updateTodoItem(itemId, updates);
   };
 
   const handleDeleteTodoItem = async (itemId: string) => {
@@ -184,6 +196,7 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
           todoItems={todoItems}
           isLoading={itemsLoading}
           onDeleteItem={handleDeleteTodoItem}
+          onUpdateItem={handleUpdateTodoItem}
         />
       )}
     </div>

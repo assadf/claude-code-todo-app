@@ -2,11 +2,11 @@
  * @jest-environment node
  */
 import { NextRequest } from 'next/server';
-import { DELETE } from './route';
+import { DELETE, PUT } from './route';
 import { getServerSession } from 'next-auth/next';
 import connectDB from '@/lib/mongoose';
 import { TodoList } from '@/models/TodoList';
-import { TodoItem } from '@/models/TodoItem';
+import { TodoItem, Priority } from '@/models/TodoItem';
 import type { Session } from 'next-auth';
 
 // Mock dependencies
@@ -31,6 +31,10 @@ const mockTodoItemFindOne = TodoItem.findOne as jest.MockedFunction<
 const mockTodoItemFindOneAndDelete =
   TodoItem.findOneAndDelete as jest.MockedFunction<
     typeof TodoItem.findOneAndDelete
+  >;
+const mockTodoItemFindOneAndUpdate =
+  TodoItem.findOneAndUpdate as jest.MockedFunction<
+    typeof TodoItem.findOneAndUpdate
   >;
 
 interface RouteParams {
@@ -315,6 +319,341 @@ describe('/api/todolists/[id]/items/[itemId]', () => {
       expect(responseData).toEqual({
         error: 'Internal server error',
         message: 'An unexpected error occurred while deleting the todo item',
+      });
+    });
+  });
+
+  describe('PUT', () => {
+    const routeParams: RouteParams = {
+      params: {
+        id: '507f1f77bcf86cd799439011',
+        itemId: '507f1f77bcf86cd799439012',
+      },
+    };
+
+    it('should successfully update a todo item', async () => {
+      const updatedItem = {
+        ...mockTodoItem,
+        title: 'Updated Title',
+        description: 'Updated description',
+        priority: Priority.HIGH,
+      };
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndUpdate.mockResolvedValue(updatedItem);
+
+      const updateData = {
+        title: 'Updated Title',
+        description: 'Updated description',
+        priority: Priority.HIGH,
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(responseData).toEqual({
+        data: updatedItem,
+        message: 'TodoItem updated successfully',
+      });
+
+      expect(mockTodoItemFindOneAndUpdate).toHaveBeenCalledWith(
+        {
+          _id: '507f1f77bcf86cd799439012',
+          todoListId: '507f1f77bcf86cd799439011',
+        },
+        {
+          title: 'Updated Title',
+          description: 'Updated description',
+          priority: Priority.HIGH,
+        },
+        { new: true, runValidators: true }
+      );
+    });
+
+    it('should successfully update only completion status', async () => {
+      const updatedItem = {
+        ...mockTodoItem,
+        isCompleted: true,
+      };
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndUpdate.mockResolvedValue(updatedItem);
+
+      const updateData = {
+        isCompleted: true,
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(responseData.data.isCompleted).toBe(true);
+
+      expect(mockTodoItemFindOneAndUpdate).toHaveBeenCalledWith(
+        {
+          _id: '507f1f77bcf86cd799439012',
+          todoListId: '507f1f77bcf86cd799439011',
+        },
+        { isCompleted: true },
+        { new: true, runValidators: true }
+      );
+    });
+
+    it('should return 401 when user is not authenticated', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(null);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ title: 'Updated Title' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(responseData).toEqual({
+        error: 'Authentication required',
+        message: 'You must be logged in to update a todo item',
+      });
+    });
+
+    it('should return 400 when validation fails', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+
+      const invalidData = {
+        title: '', // Empty title should fail validation
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(invalidData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(responseData.error).toBe('Validation failed');
+    });
+
+    it('should return 404 when todo list is not found', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(null);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ title: 'Updated Title' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(responseData).toEqual({
+        error: 'TodoList not found',
+        message: 'No todo list found with the provided ID',
+      });
+    });
+
+    it('should return 403 when user does not own the todo list', async () => {
+      const todoListOwnedByOtherUser = {
+        ...mockTodoList,
+        userId: 'other-user-456',
+      };
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(todoListOwnedByOtherUser);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ title: 'Updated Title' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(responseData).toEqual({
+        error: 'Access denied',
+        message: 'You do not have permission to update items in this todo list',
+      });
+    });
+
+    it('should return 404 when todo item is not found', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(null);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ title: 'Updated Title' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(responseData).toEqual({
+        error: 'TodoItem not found',
+        message: 'No todo item found with the provided ID in this todo list',
+      });
+    });
+
+    it('should return 400 for invalid JSON body', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: 'invalid json',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(responseData).toEqual({
+        error: 'Invalid request body',
+        message: 'Request body must be valid JSON',
+      });
+    });
+
+    it('should handle due date updates correctly', async () => {
+      const dueDate = new Date('2024-12-31');
+      const updatedItem = {
+        ...mockTodoItem,
+        dueDate,
+      };
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndUpdate.mockResolvedValue(updatedItem);
+
+      const updateData = {
+        dueDate: '2024-12-31T00:00:00.000Z',
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+
+      expect(response.status).toBe(200);
+      expect(mockTodoItemFindOneAndUpdate).toHaveBeenCalledWith(
+        {
+          _id: '507f1f77bcf86cd799439012',
+          todoListId: '507f1f77bcf86cd799439011',
+        },
+        { dueDate: expect.any(Date) },
+        { new: true, runValidators: true }
+      );
+    });
+
+    it('should return 500 when database error occurs', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockRejectedValue(
+        new Error('Database connection failed')
+      );
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ title: 'Updated Title' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(responseData).toEqual({
+        error: 'Internal server error',
+        message: 'An unexpected error occurred while updating the todo item',
       });
     });
   });
