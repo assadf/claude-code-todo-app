@@ -216,4 +216,81 @@ describe('useTodoItems', () => {
       expect.any(Object)
     );
   });
+
+  it('successfully deletes a todo item', async () => {
+    const mockMutate = jest.fn();
+    const useSWR = require('swr').default;
+    useSWR.mockReturnValue({
+      data: mockTodoItems,
+      error: null,
+      isLoading: false,
+      mutate: mockMutate,
+    });
+
+    const deletedTodoItem = {
+      _id: '1',
+      title: 'Test Item 1',
+      description: 'Test description',
+      isCompleted: false,
+      priority: Priority.MEDIUM,
+      todoListId: 'list-1',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: deletedTodoItem,
+        message: 'TodoItem deleted successfully',
+      }),
+    });
+
+    const { result } = renderHook(() => useTodoItems('list-1'));
+
+    const deletedItem = await result.current.deleteTodoItem('1');
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/todolists/list-1/items/1', {
+      method: 'DELETE',
+    });
+
+    expect(deletedItem).toEqual(deletedTodoItem);
+    expect(mockMutate).toHaveBeenCalled();
+  });
+
+  it('handles delete todo item error', async () => {
+    const mockMutate = jest.fn();
+    const useSWR = require('swr').default;
+    useSWR.mockReturnValue({
+      data: mockTodoItems,
+      error: null,
+      isLoading: false,
+      mutate: mockMutate,
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        error: 'TodoItem not found',
+        message: 'No todo item found with the provided ID in this todo list',
+      }),
+    });
+
+    const { result } = renderHook(() => useTodoItems('list-1'));
+
+    await expect(
+      result.current.deleteTodoItem('nonexistent-id')
+    ).rejects.toThrow(
+      'No todo item found with the provided ID in this todo list'
+    );
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('throws error when deleting item without todoListId', async () => {
+    const { result } = renderHook(() => useTodoItems(undefined));
+
+    await expect(result.current.deleteTodoItem('item-id')).rejects.toThrow(
+      'Todo list ID is required'
+    );
+  });
 });

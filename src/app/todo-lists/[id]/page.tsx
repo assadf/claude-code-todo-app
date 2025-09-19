@@ -122,6 +122,7 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
     isLoading: itemsLoading,
     error: itemsError,
     addTodoItem,
+    deleteTodoItem,
   } = useTodoItems(todoListId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -140,6 +141,10 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDeleteTodoItem = async (itemId: string) => {
+    await deleteTodoItem(itemId);
   };
 
   return (
@@ -175,7 +180,11 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
           <p className="text-sm text-gray-400">{itemsError.message}</p>
         </div>
       ) : (
-        <TodoItemDisplay todoItems={todoItems} isLoading={itemsLoading} />
+        <TodoItemDisplay
+          todoItems={todoItems}
+          isLoading={itemsLoading}
+          onDeleteItem={handleDeleteTodoItem}
+        />
       )}
     </div>
   );
