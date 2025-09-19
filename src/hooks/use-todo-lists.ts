@@ -36,10 +36,25 @@ export function useTodoLists() {
     }
   );
 
+  const deleteTodoList = async (todoListId: string): Promise<void> => {
+    const response = await fetch(`/api/todolists/${todoListId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      throw new Error(errorData.message || 'Failed to delete todo list');
+    }
+
+    // Revalidate the cache after successful deletion
+    await mutate();
+  };
+
   return {
     todoLists: data,
     isLoading,
     error,
     mutate, // For manual revalidation
+    deleteTodoList,
   };
 }

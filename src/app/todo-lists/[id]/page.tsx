@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTodoList } from '@/hooks/use-todo-list';
 import { useTodoItems } from '@/hooks/use-todo-items';
+import { useTodoLists } from '@/hooks/use-todo-lists';
 import TodoItemForm from '@/components/forms/TodoItemForm';
 import TodoItemDisplay from '@/components/ui/TodoItemDisplay';
+import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog';
 import type {
   MongoTodoList,
   CreateTodoItemData,
@@ -53,6 +55,7 @@ function StatusBadge({ isCompleted }: StatusBadgeProps) {
 
 interface TodoListHeaderProps {
   todoList: MongoTodoList;
+  onDeleteList: () => void;
   todoItems?: {
     _id: string;
     title: string;
@@ -66,7 +69,11 @@ interface TodoListHeaderProps {
   }[];
 }
 
-function TodoListHeader({ todoList, todoItems = [] }: TodoListHeaderProps) {
+function TodoListHeader({
+  todoList,
+  onDeleteList,
+  todoItems = [],
+}: TodoListHeaderProps) {
   const formatDate = (date: string | Date) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
@@ -93,7 +100,29 @@ function TodoListHeader({ todoList, todoItems = [] }: TodoListHeaderProps) {
             <p className="text-lg text-gray-400">{todoList.description}</p>
           )}
         </div>
-        <StatusBadge isCompleted={todoList.isCompleted} />
+        <div className="flex items-center space-x-3">
+          <StatusBadge isCompleted={todoList.isCompleted} />
+          <button
+            onClick={onDeleteList}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-600/20 hover:text-red-400"
+            aria-label="Delete todo list"
+            title="Delete todo list"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -186,8 +215,12 @@ function TodoItemsSection({ todoListId, todoList }: TodoItemsSectionProps) {
     updateTodoItem,
     deleteTodoItem,
   } = useTodoItems(todoListId);
+  const { deleteTodoList } = useTodoLists();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   const handleAddTodoItem = async (data: CreateTodoItemData) => {
     setIsSubmitting(true);
@@ -230,10 +263,36 @@ function TodoItemsSection({ todoListId, todoList }: TodoItemsSectionProps) {
     }
   };
 
+  const handleDeleteList = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteTodoList(todoListId);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Failed to delete todo list:', error);
+      // Could add error toast notification here
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+  };
+
   return (
     <div className="space-y-8">
       {/* Todo List Header with Progress */}
-      <TodoListHeader todoList={todoList} todoItems={todoItems} />
+      <TodoListHeader
+        todoList={todoList}
+        onDeleteList={handleDeleteList}
+        todoItems={todoItems}
+      />
 
       {/* Todo Items Section */}
       <div className="space-y-6">
@@ -307,6 +366,16 @@ function TodoItemsSection({ todoListId, todoList }: TodoItemsSectionProps) {
           />
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Todo List"
+        message={`Are you sure you want to delete "${todoList.name}"? This action cannot be undone and will permanently delete all associated todo items.`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
