@@ -36,6 +36,13 @@ const mockTodoItemFindOneAndUpdate =
   TodoItem.findOneAndUpdate as jest.MockedFunction<
     typeof TodoItem.findOneAndUpdate
   >;
+const mockTodoItemFind = TodoItem.find as jest.MockedFunction<
+  typeof TodoItem.find
+>;
+const mockTodoListFindByIdAndUpdate =
+  TodoList.findByIdAndUpdate as jest.MockedFunction<
+    typeof TodoList.findByIdAndUpdate
+  >;
 
 interface RouteParams {
   params: {
@@ -320,6 +327,64 @@ describe('/api/todolists/[id]/items/[itemId]', () => {
         error: 'Internal server error',
         message: 'An unexpected error occurred while deleting the todo item',
       });
+    });
+
+    it('should auto-complete todo list when deleting item leaves only completed items', async () => {
+      const remainingItems = [
+        { _id: '507f1f77bcf86cd799439013', isCompleted: true },
+        { _id: '507f1f77bcf86cd799439014', isCompleted: true },
+      ];
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndDelete.mockResolvedValue(mockTodoItem);
+      mockTodoItemFind.mockResolvedValue(remainingItems);
+      mockTodoListFindByIdAndUpdate.mockResolvedValue(null);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const response = await DELETE(request, routeParams);
+
+      expect(response.status).toBe(200);
+      expect(mockTodoItemFind).toHaveBeenCalledWith({
+        todoListId: '507f1f77bcf86cd799439011',
+      });
+      expect(mockTodoListFindByIdAndUpdate).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        { isCompleted: true }
+      );
+    });
+
+    it('should mark todo list as incomplete when deleting last item', async () => {
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndDelete.mockResolvedValue(mockTodoItem);
+      mockTodoItemFind.mockResolvedValue([]); // No remaining items
+      mockTodoListFindByIdAndUpdate.mockResolvedValue(null);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const response = await DELETE(request, routeParams);
+
+      expect(response.status).toBe(200);
+      expect(mockTodoListFindByIdAndUpdate).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        { isCompleted: false }
+      );
     });
   });
 
@@ -655,6 +720,100 @@ describe('/api/todolists/[id]/items/[itemId]', () => {
         error: 'Internal server error',
         message: 'An unexpected error occurred while updating the todo item',
       });
+    });
+
+    it('should auto-complete todo list when all items are completed', async () => {
+      const updatedItem = {
+        ...mockTodoItem,
+        isCompleted: true,
+      };
+
+      // Mock all items in the list as completed
+      const allItems = [
+        { _id: '507f1f77bcf86cd799439012', isCompleted: false },
+        { _id: '507f1f77bcf86cd799439013', isCompleted: true },
+      ];
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(mockTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndUpdate.mockResolvedValue(updatedItem);
+      mockTodoItemFind.mockResolvedValue(allItems);
+      mockTodoListFindByIdAndUpdate.mockResolvedValue(null);
+
+      const updateData = {
+        isCompleted: true,
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+
+      expect(response.status).toBe(200);
+      expect(mockTodoItemFind).toHaveBeenCalledWith({
+        todoListId: '507f1f77bcf86cd799439011',
+      });
+      expect(mockTodoListFindByIdAndUpdate).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        { isCompleted: true }
+      );
+    });
+
+    it('should auto-uncomplete todo list when item is marked incomplete', async () => {
+      const updatedItem = {
+        ...mockTodoItem,
+        isCompleted: false,
+      };
+
+      // Mock completed todo list
+      const completedTodoList = { ...mockTodoList, isCompleted: true };
+
+      // Mock mixed completion items
+      const allItems = [
+        { _id: '507f1f77bcf86cd799439012', isCompleted: true },
+        { _id: '507f1f77bcf86cd799439013', isCompleted: true },
+      ];
+
+      mockConnectDB.mockResolvedValue(undefined);
+      mockGetServerSession.mockResolvedValue(mockSession);
+      mockTodoListFindById.mockResolvedValue(completedTodoList);
+      mockTodoItemFindOne.mockResolvedValue(mockTodoItem);
+      mockTodoItemFindOneAndUpdate.mockResolvedValue(updatedItem);
+      mockTodoItemFind.mockResolvedValue(allItems);
+      mockTodoListFindByIdAndUpdate.mockResolvedValue(null);
+
+      const updateData = {
+        isCompleted: false,
+      };
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/todolists/507f1f77bcf86cd799439011/items/507f1f77bcf86cd799439012',
+        {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const response = await PUT(request, routeParams);
+
+      expect(response.status).toBe(200);
+      expect(mockTodoListFindByIdAndUpdate).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        { isCompleted: false }
+      );
     });
   });
 });

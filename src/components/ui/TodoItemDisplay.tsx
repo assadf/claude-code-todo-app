@@ -503,16 +503,48 @@ export default function TodoItemDisplay({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  const incompleteItems = sortedItems.filter(item => !item.isCompleted);
+  const completedItems = sortedItems.filter(item => item.isCompleted);
+
   return (
-    <div className="space-y-4">
-      {sortedItems.map(item => (
-        <TodoItemCard
-          key={item._id}
-          item={item}
-          onDeleteItem={onDeleteItem}
-          onUpdateItem={onUpdateItem}
-        />
-      ))}
+    <div className="space-y-6">
+      {/* Active/Incomplete Tasks */}
+      {incompleteItems.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-gray-300">
+            Active Tasks ({incompleteItems.length})
+          </h3>
+          <div className="space-y-3">
+            {incompleteItems.map(item => (
+              <TodoItemCard
+                key={item._id}
+                item={item}
+                onDeleteItem={onDeleteItem}
+                onUpdateItem={onUpdateItem}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Tasks */}
+      {completedItems.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-gray-400">
+            Completed Tasks ({completedItems.length})
+          </h3>
+          <div className="space-y-3 opacity-75">
+            {completedItems.map(item => (
+              <TodoItemCard
+                key={item._id}
+                item={item}
+                onDeleteItem={onDeleteItem}
+                onUpdateItem={onUpdateItem}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

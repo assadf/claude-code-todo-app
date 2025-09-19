@@ -217,6 +217,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const todoItem = await TodoItem.create(todoItemData);
 
+    // When a new item is added, the list should be marked as incomplete
+    // (since new items are incomplete by default)
+    if (todoList.isCompleted) {
+      await TodoList.findByIdAndUpdate(id, { isCompleted: false });
+    }
+
     return NextResponse.json(
       {
         data: todoItem,

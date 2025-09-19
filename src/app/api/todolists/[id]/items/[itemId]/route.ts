@@ -131,6 +131,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       todoListId: id,
     });
 
+    // Check if todo list should be marked as completed after deletion
+    const remainingItems = await TodoItem.find({ todoListId: id });
+    if (!remainingItems || remainingItems.length === 0) {
+      // If no items left, mark list as incomplete (empty list shouldn't be completed)
+      await TodoList.findByIdAndUpdate(id, { isCompleted: false });
+    } else {
+      // Check if all remaining items are completed
+      const allCompleted = remainingItems.every(item => item.isCompleted);
+      await TodoList.findByIdAndUpdate(id, { isCompleted: allCompleted });
+    }
+
     return NextResponse.json(
       {
         data: deletedTodoItem,
@@ -288,6 +299,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData,
       { new: true, runValidators: true }
     );
+
+    // Check if we should auto-complete the todo list
+    if (updateData.isCompleted !== undefined) {
+      // Get all items for this todo list
+      const allItems = await TodoItem.find({ todoListId: id });
+      if (allItems && allItems.length > 0) {
+        const allCompleted = allItems.every(item =>
+          item._id.toString() === itemId
+            ? updateData.isCompleted
+            : item.isCompleted
+        );
+
+        // Update todo list completion status if needed
+        if (allCompleted) {
+          await TodoList.findByIdAndUpdate(id, { isCompleted: true });
+        } else if (!allCompleted && todoList.isCompleted) {
+          await TodoList.findByIdAndUpdate(id, { isCompleted: false });
+        }
+      }
+    }
 
     return NextResponse.json(
       {

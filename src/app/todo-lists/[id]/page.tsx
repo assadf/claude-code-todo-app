@@ -10,6 +10,7 @@ import type {
   MongoTodoList,
   CreateTodoItemData,
   UpdateTodoItemData,
+  Priority,
 } from '@/types';
 
 interface TodoListDetailPageProps {
@@ -52,9 +53,20 @@ function StatusBadge({ isCompleted }: StatusBadgeProps) {
 
 interface TodoListHeaderProps {
   todoList: MongoTodoList;
+  todoItems?: {
+    _id: string;
+    title: string;
+    description?: string;
+    isCompleted: boolean;
+    priority: Priority;
+    dueDate?: string;
+    todoListId: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
 }
 
-function TodoListHeader({ todoList }: TodoListHeaderProps) {
+function TodoListHeader({ todoList, todoItems = [] }: TodoListHeaderProps) {
   const formatDate = (date: string | Date) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
@@ -63,6 +75,12 @@ function TodoListHeader({ todoList }: TodoListHeaderProps) {
       year: 'numeric',
     });
   };
+
+  // Calculate progress
+  const totalItems = todoItems.length;
+  const completedItems = todoItems.filter(item => item.isCompleted).length;
+  const progressPercentage =
+    totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
   return (
     <div className="card p-8">
@@ -77,6 +95,26 @@ function TodoListHeader({ todoList }: TodoListHeaderProps) {
         </div>
         <StatusBadge isCompleted={todoList.isCompleted} />
       </div>
+
+      {/* Progress Bar */}
+      {totalItems > 0 && (
+        <div className="mb-6">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-gray-300">
+              Progress: {completedItems} of {totalItems} completed
+            </span>
+            <span className="font-medium text-purple-400">
+              {Math.round(progressPercentage)}%
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-gray-800">
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-300 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center space-x-6 text-sm text-gray-400">
         <div className="flex items-center">
@@ -93,8 +131,26 @@ function TodoListHeader({ todoList }: TodoListHeaderProps) {
               d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
             />
           </svg>
-          <span>{todoList._count?.todoItems || 0} tasks</span>
+          <span>{totalItems} tasks</span>
         </div>
+        {totalItems > 0 && (
+          <div className="flex items-center">
+            <svg
+              className="mr-2 h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="text-green-400">{completedItems} completed</span>
+          </div>
+        )}
         <div className="flex items-center">
           <svg
             className="mr-2 h-5 w-5"
@@ -118,9 +174,10 @@ function TodoListHeader({ todoList }: TodoListHeaderProps) {
 
 interface TodoItemsSectionProps {
   todoListId: string;
+  todoList: MongoTodoList;
 }
 
-function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
+function TodoItemsSection({ todoListId, todoList }: TodoItemsSectionProps) {
   const {
     todoItems,
     isLoading: itemsLoading,
@@ -159,46 +216,97 @@ function TodoItemsSection({ todoListId }: TodoItemsSectionProps) {
     await deleteTodoItem(itemId);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Add Todo Item Form */}
-      <TodoItemForm
-        onSubmit={handleAddTodoItem}
-        isLoading={isSubmitting}
-        error={submitError}
-      />
+  const handleMarkAllComplete = async () => {
+    const incompleteItems = todoItems.filter(item => !item.isCompleted);
+    for (const item of incompleteItems) {
+      await updateTodoItem(item._id, { isCompleted: true });
+    }
+  };
 
-      {/* Todo Items Display */}
-      {itemsError ? (
-        <div className="card p-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-600">
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+  const handleMarkAllIncomplete = async () => {
+    const completeItems = todoItems.filter(item => item.isCompleted);
+    for (const item of completeItems) {
+      await updateTodoItem(item._id, { isCompleted: false });
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Todo List Header with Progress */}
+      <TodoListHeader todoList={todoList} todoItems={todoItems} />
+
+      {/* Todo Items Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Tasks</h2>
+          <div className="flex items-center space-x-4">
+            {todoItems.length > 0 && !itemsLoading && (
+              <div className="text-sm text-gray-400">
+                {todoItems.filter(item => !item.isCompleted).length} remaining
+              </div>
+            )}
+            {todoItems.length > 0 && !itemsLoading && (
+              <div className="flex space-x-2">
+                {todoItems.some(item => !item.isCompleted) && (
+                  <button
+                    onClick={handleMarkAllComplete}
+                    className="rounded px-3 py-1 text-xs font-medium text-green-400 transition-colors hover:bg-green-50/10 hover:text-green-300"
+                  >
+                    Mark all complete
+                  </button>
+                )}
+                {todoItems.some(item => item.isCompleted) && (
+                  <button
+                    onClick={handleMarkAllIncomplete}
+                    className="rounded px-3 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-50/10 hover:text-gray-300"
+                  >
+                    Mark all incomplete
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          <h3 className="mb-2 text-lg font-semibold text-white">
-            Failed to load todo items
-          </h3>
-          <p className="text-sm text-gray-400">{itemsError.message}</p>
         </div>
-      ) : (
-        <TodoItemDisplay
-          todoItems={todoItems}
-          isLoading={itemsLoading}
-          onDeleteItem={handleDeleteTodoItem}
-          onUpdateItem={handleUpdateTodoItem}
+
+        {/* Add Todo Item Form */}
+        <TodoItemForm
+          onSubmit={handleAddTodoItem}
+          isLoading={isSubmitting}
+          error={submitError}
         />
-      )}
+
+        {/* Todo Items Display */}
+        {itemsError ? (
+          <div className="card p-6 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-600">
+              <svg
+                className="h-6 w-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-white">
+              Failed to load todo items
+            </h3>
+            <p className="text-sm text-gray-400">{itemsError.message}</p>
+          </div>
+        ) : (
+          <TodoItemDisplay
+            todoItems={todoItems}
+            isLoading={itemsLoading}
+            onDeleteItem={handleDeleteTodoItem}
+            onUpdateItem={handleUpdateTodoItem}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -338,18 +446,9 @@ export default function TodoListDetailPage({
           </button>
         </div>
 
-        {/* Todo List Header */}
-        <div className="mb-8">
-          <TodoListHeader todoList={todoList} />
-        </div>
-
         {/* Todo Items Section */}
         <div>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white">TODO Items</h2>
-          </div>
-
-          <TodoItemsSection todoListId={params.id} />
+          <TodoItemsSection todoListId={params.id} todoList={todoList} />
         </div>
       </div>
     </div>
