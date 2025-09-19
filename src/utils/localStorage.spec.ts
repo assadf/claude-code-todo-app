@@ -2,8 +2,12 @@ import {
   getSortPreference,
   setSortPreference,
   clearSortPreference,
+  getFilterPreference,
+  setFilterPreference,
+  clearFilterPreference,
 } from './localStorage';
 import type { SortOption } from '@/types/sorting';
+import type { SearchAndFilterState } from '@/types/filtering';
 
 // Mock localStorage
 const localStorageMock: {
@@ -36,6 +40,19 @@ describe('localStorage utilities', () => {
     // Clear localStorage mock state and call history
     localStorageMock.clear();
     jest.clearAllMocks();
+
+    // Reset localStorage mock implementations
+    localStorageMock.getItem.mockImplementation(
+      (key: string): string | null => localStorageMock.store[key] || null
+    );
+    localStorageMock.setItem.mockImplementation(
+      (key: string, value: string): void => {
+        localStorageMock.store[key] = value;
+      }
+    );
+    localStorageMock.removeItem.mockImplementation((key: string): void => {
+      delete localStorageMock.store[key];
+    });
 
     // Set up localStorage mock
     Object.defineProperty(window, 'localStorage', {
@@ -184,6 +201,213 @@ describe('localStorage utilities', () => {
         localStorageMock.store['todoListSortPreference'] = sortOption;
         const retrieved = getSortPreference();
         expect(retrieved).toBe(sortOption);
+      }
+    );
+  });
+
+  describe('getFilterPreference', () => {
+    it('should return default filter state when no preference is saved', () => {
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        'todoListFilterPreference'
+      );
+    });
+
+    it('should return saved valid filter state', () => {
+      const savedState: SearchAndFilterState = {
+        searchQuery: 'test query',
+        statusFilter: 'completed',
+      };
+      localStorageMock.setItem(
+        'todoListFilterPreference',
+        JSON.stringify(savedState)
+      );
+
+      const result = getFilterPreference();
+      expect(result).toEqual(savedState);
+    });
+
+    it('should return default state for invalid JSON', () => {
+      localStorageMock.setItem('todoListFilterPreference', 'invalid json');
+
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+    });
+
+    it('should return default state for invalid object structure', () => {
+      const invalidState = {
+        searchQuery: 123, // Invalid type
+        statusFilter: 'invalid-status',
+      };
+      localStorageMock.setItem(
+        'todoListFilterPreference',
+        JSON.stringify(invalidState)
+      );
+
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+    });
+
+    it('should return default state for null object', () => {
+      localStorageMock.setItem('todoListFilterPreference', 'null');
+
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+    });
+
+    it('should handle localStorage errors gracefully', () => {
+      localStorageMock.getItem.mockImplementation(() => {
+        throw new Error('localStorage error');
+      });
+
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+      expect(console.warn).toHaveBeenCalledWith(
+        'Error reading from localStorage for key "todoListFilterPreference":',
+        expect.any(Error)
+      );
+    });
+
+    it('should return default when window is undefined (SSR)', () => {
+      const originalWindow = global.window;
+      // @ts-ignore
+      delete global.window;
+
+      const result = getFilterPreference();
+      expect(result).toEqual({
+        searchQuery: '',
+        statusFilter: 'all',
+      });
+
+      global.window = originalWindow;
+    });
+  });
+
+  describe('setFilterPreference', () => {
+    it('should save valid filter state to localStorage', () => {
+      const filterState: SearchAndFilterState = {
+        searchQuery: 'my search',
+        statusFilter: 'in-progress',
+      };
+
+      const result = setFilterPreference(filterState);
+      expect(result).toBe(true);
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'todoListFilterPreference',
+        JSON.stringify(filterState)
+      );
+    });
+
+    it('should handle localStorage errors gracefully', () => {
+      localStorageMock.setItem.mockImplementation(() => {
+        throw new Error('localStorage error');
+      });
+
+      const filterState: SearchAndFilterState = {
+        searchQuery: 'test',
+        statusFilter: 'all',
+      };
+
+      const result = setFilterPreference(filterState);
+      expect(result).toBe(false);
+      expect(console.warn).toHaveBeenCalledWith(
+        'Error writing to localStorage for key "todoListFilterPreference":',
+        expect.any(Error)
+      );
+    });
+
+    it('should return false when window is undefined (SSR)', () => {
+      const originalWindow = global.window;
+      // @ts-ignore
+      delete global.window;
+
+      const filterState: SearchAndFilterState = {
+        searchQuery: 'test',
+        statusFilter: 'all',
+      };
+
+      const result = setFilterPreference(filterState);
+      expect(result).toBe(false);
+
+      global.window = originalWindow;
+    });
+  });
+
+  describe('clearFilterPreference', () => {
+    it('should remove filter preference from localStorage', () => {
+      // First set an item
+      const filterState: SearchAndFilterState = {
+        searchQuery: 'test',
+        statusFilter: 'completed',
+      };
+      setFilterPreference(filterState);
+
+      // Then clear it
+      const result = clearFilterPreference();
+      expect(result).toBe(true);
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'todoListFilterPreference'
+      );
+    });
+
+    it('should handle localStorage errors gracefully', () => {
+      localStorageMock.removeItem.mockImplementation(() => {
+        throw new Error('localStorage error');
+      });
+
+      const result = clearFilterPreference();
+      expect(result).toBe(false);
+      expect(console.warn).toHaveBeenCalledWith(
+        'Error clearing filter preference from localStorage:',
+        expect.any(Error)
+      );
+    });
+
+    it('should return false when window is undefined (SSR)', () => {
+      const originalWindow = global.window;
+      // @ts-ignore
+      delete global.window;
+
+      const result = clearFilterPreference();
+      expect(result).toBe(false);
+
+      global.window = originalWindow;
+    });
+  });
+
+  describe('filter state validation', () => {
+    const validFilterStates: SearchAndFilterState[] = [
+      { searchQuery: '', statusFilter: 'all' },
+      { searchQuery: 'test', statusFilter: 'completed' },
+      { searchQuery: 'another search', statusFilter: 'in-progress' },
+      { searchQuery: '', statusFilter: 'completed' },
+      { searchQuery: 'search with spaces', statusFilter: 'in-progress' },
+    ];
+
+    it.each(validFilterStates)(
+      'should handle %o filter state correctly',
+      filterState => {
+        // Set in localStorage and verify retrieval
+        const serialized = JSON.stringify(filterState);
+        localStorageMock.store['todoListFilterPreference'] = serialized;
+        const retrieved = getFilterPreference();
+        expect(retrieved).toEqual(filterState);
       }
     );
   });

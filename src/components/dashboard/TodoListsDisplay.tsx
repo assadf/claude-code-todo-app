@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useTodoLists } from '@/hooks/use-todo-lists';
 import { SortDropdown } from '@/components/ui/SortDropdown';
+import { SearchAndFilterControls } from '@/components/ui/SearchAndFilterControls';
 import type { MongoTodoList } from '@/types';
 
 interface TodoListCardProps {
@@ -168,14 +169,23 @@ function LoadingSkeleton() {
 }
 
 interface TodoListsDisplayProps {
-  showSortControls?: boolean;
+  showControls?: boolean;
 }
 
 export function TodoListsDisplay({
-  showSortControls = true,
+  showControls = true,
 }: TodoListsDisplayProps) {
-  const { todoLists, isLoading, error, sortOption, setSortOption } =
-    useTodoLists();
+  const {
+    todoLists,
+    totalCount,
+    filteredCount,
+    isLoading,
+    error,
+    sortOption,
+    setSortOption,
+    filters,
+    setFilters,
+  } = useTodoLists();
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -207,29 +217,62 @@ export function TodoListsDisplay({
     );
   }
 
-  if (!todoLists || todoLists.length === 0) {
+  // Show empty state only if no data at all (not filtered results)
+  if (!todoLists && totalCount === 0) {
     return <EmptyState />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Sort Controls */}
-      {showSortControls && todoLists && todoLists.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-400">
-            Showing {todoLists.length} todo list
-            {todoLists.length !== 1 ? 's' : ''}
+      {/* Search, Filter and Sort Controls */}
+      {showControls && totalCount > 0 && (
+        <div className="space-y-4">
+          <SearchAndFilterControls
+            filters={filters}
+            onChange={setFilters}
+            totalCount={totalCount}
+            filteredCount={filteredCount}
+          />
+          <div className="flex justify-end">
+            <SortDropdown value={sortOption} onChange={setSortOption} />
           </div>
-          <SortDropdown value={sortOption} onChange={setSortOption} />
         </div>
       )}
 
-      {/* Todo Lists Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {todoLists.map(todoList => (
-          <TodoListCard key={todoList._id} todoList={todoList} />
-        ))}
-      </div>
+      {/* Results */}
+      {todoLists && todoLists.length > 0 ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {todoLists.map(todoList => (
+            <TodoListCard key={todoList._id} todoList={todoList} />
+          ))}
+        </div>
+      ) : totalCount > 0 ? (
+        <div className="card p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-700">
+            <svg
+              className="h-6 w-6 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-white">
+            No matching todo lists
+          </h3>
+          <p className="text-sm text-gray-400">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      ) : (
+        <EmptyState />
+      )}
     </div>
   );
 }
