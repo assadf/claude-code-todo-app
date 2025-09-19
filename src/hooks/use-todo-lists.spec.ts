@@ -11,13 +11,23 @@ jest.mock('swr', () => ({
 jest.mock('@/utils/localStorage', () => ({
   getSortPreference: jest.fn(() => 'updated-desc'),
   setSortPreference: jest.fn(),
+  getFilterPreference: jest.fn(() => ({
+    searchQuery: '',
+    statusFilter: 'all',
+  })),
+  setFilterPreference: jest.fn(),
 }));
 
 // Mock fetch
 global.fetch = jest.fn();
 
 import useSWR from 'swr';
-import { getSortPreference, setSortPreference } from '@/utils/localStorage';
+import {
+  getSortPreference,
+  setSortPreference,
+  getFilterPreference,
+  setFilterPreference,
+} from '@/utils/localStorage';
 
 const mockUseSWR = useSWR as jest.MockedFunction<typeof useSWR>;
 const mockGetSortPreference = getSortPreference as jest.MockedFunction<
@@ -25,6 +35,12 @@ const mockGetSortPreference = getSortPreference as jest.MockedFunction<
 >;
 const mockSetSortPreference = setSortPreference as jest.MockedFunction<
   typeof setSortPreference
+>;
+const mockGetFilterPreference = getFilterPreference as jest.MockedFunction<
+  typeof getFilterPreference
+>;
+const mockSetFilterPreference = setFilterPreference as jest.MockedFunction<
+  typeof setFilterPreference
 >;
 
 describe('useTodoLists', () => {
@@ -55,6 +71,11 @@ describe('useTodoLists', () => {
     jest.clearAllMocks();
     mockGetSortPreference.mockReturnValue('updated-desc');
     mockSetSortPreference.mockReturnValue(true);
+    mockGetFilterPreference.mockReturnValue({
+      searchQuery: '',
+      statusFilter: 'all',
+    });
+    mockSetFilterPreference.mockReturnValue(true);
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -317,6 +338,209 @@ describe('useTodoLists', () => {
       const { result } = renderHook(() => useTodoLists());
 
       expect(result.current.sortOption).toBe('updated-desc');
+    });
+  });
+
+  describe('filtering functionality', () => {
+    it('should load saved filter preferences on mount', () => {
+      const savedFilters = {
+        searchQuery: 'test',
+        statusFilter: 'completed' as const,
+      };
+      mockGetFilterPreference.mockReturnValue(savedFilters);
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      expect(mockGetFilterPreference).toHaveBeenCalled();
+      expect(result.current.filters).toEqual(savedFilters);
+    });
+
+    it('should save filter preferences when they change', async () => {
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      // Wait for initial load to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      // Clear the mock to ignore the initial load call
+      mockSetFilterPreference.mockClear();
+
+      // Change filter preferences
+      const newFilters = {
+        searchQuery: 'work',
+        statusFilter: 'in-progress' as const,
+      };
+      act(() => {
+        result.current.setFilters(newFilters);
+      });
+
+      expect(mockSetFilterPreference).toHaveBeenCalledWith(newFilters);
+    });
+
+    it('should filter todo lists by search query', () => {
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      act(() => {
+        result.current.setFilters({
+          searchQuery: 'zebra',
+          statusFilter: 'all',
+        });
+      });
+
+      expect(result.current.todoLists?.map(list => list.name)).toEqual([
+        'Zebra Project',
+      ]);
+      expect(result.current.totalCount).toBe(2);
+      expect(result.current.filteredCount).toBe(1);
+    });
+
+    it('should filter todo lists by status', () => {
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      act(() => {
+        result.current.setFilters({
+          searchQuery: '',
+          statusFilter: 'completed',
+        });
+      });
+
+      expect(result.current.todoLists?.map(list => list.name)).toEqual([
+        'Alpha Project',
+      ]);
+      expect(result.current.totalCount).toBe(2);
+      expect(result.current.filteredCount).toBe(1);
+    });
+
+    it('should combine search and status filters', () => {
+      const extendedMockLists = [
+        ...mockTodoLists,
+        {
+          _id: '3',
+          name: 'Alpha Testing',
+          description: 'Test the alpha features',
+          isCompleted: false,
+          userId: 'user-123',
+          createdAt: '2024-01-03T00:00:00.000Z',
+          updatedAt: '2024-01-03T00:00:00.000Z',
+          _count: { todoItems: 2 },
+        },
+      ];
+
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: extendedMockLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      act(() => {
+        result.current.setFilters({
+          searchQuery: 'alpha',
+          statusFilter: 'completed',
+        });
+      });
+
+      expect(result.current.todoLists?.map(list => list.name)).toEqual([
+        'Alpha Project',
+      ]);
+      expect(result.current.totalCount).toBe(3);
+      expect(result.current.filteredCount).toBe(1);
+    });
+
+    it('should maintain sort order after filtering', () => {
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      // Set name ascending sort
+      act(() => {
+        result.current.setSortOption('name-asc');
+      });
+
+      // Apply filter that should return both items
+      act(() => {
+        result.current.setFilters({
+          searchQuery: 'project',
+          statusFilter: 'all',
+        });
+      });
+
+      // Should be filtered and sorted alphabetically
+      expect(result.current.todoLists?.map(list => list.name)).toEqual([
+        'Alpha Project',
+        'Zebra Project',
+      ]);
+    });
+
+    it('should handle empty filter results', () => {
+      const mockMutate = jest.fn();
+      mockUseSWR.mockReturnValue({
+        data: mockTodoLists,
+        error: null,
+        isLoading: false,
+        mutate: mockMutate,
+        isValidating: false,
+      });
+
+      const { result } = renderHook(() => useTodoLists());
+
+      act(() => {
+        result.current.setFilters({
+          searchQuery: 'nonexistent',
+          statusFilter: 'all',
+        });
+      });
+
+      expect(result.current.todoLists).toEqual([]);
+      expect(result.current.totalCount).toBe(2);
+      expect(result.current.filteredCount).toBe(0);
     });
   });
 });

@@ -4,9 +4,17 @@ import { useMemo, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import type { MongoTodoList } from '@/types';
 import type { SortOption } from '@/types/sorting';
+import type { SearchAndFilterState } from '@/types/filtering';
 import { DEFAULT_SORT_OPTION } from '@/types/sorting';
+import { DEFAULT_SEARCH_AND_FILTER_STATE } from '@/types/filtering';
 import { sortTodoLists } from '@/utils/sorting';
-import { getSortPreference, setSortPreference } from '@/utils/localStorage';
+import { filterTodoLists } from '@/utils/filtering';
+import {
+  getSortPreference,
+  setSortPreference,
+  getFilterPreference,
+  setFilterPreference,
+} from '@/utils/localStorage';
 
 interface ApiResponse {
   data: MongoTodoList[];
@@ -32,21 +40,32 @@ const fetcher = async (url: string): Promise<MongoTodoList[]> => {
 
 export function useTodoLists() {
   const [sortOption, setSortOption] = useState<SortOption>(DEFAULT_SORT_OPTION);
+  const [filters, setFilters] = useState<SearchAndFilterState>(
+    DEFAULT_SEARCH_AND_FILTER_STATE
+  );
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load saved sort preference on mount
+  // Load saved preferences on mount
   useEffect(() => {
-    const savedPreference = getSortPreference();
-    setSortOption(savedPreference);
+    const savedSortPreference = getSortPreference();
+    const savedFilterPreference = getFilterPreference();
+    setSortOption(savedSortPreference);
+    setFilters(savedFilterPreference);
     setIsInitialized(true);
   }, []);
 
-  // Save sort preference when it changes (but not during initial load)
+  // Save preferences when they change (but not during initial load)
   useEffect(() => {
     if (isInitialized) {
       setSortPreference(sortOption);
     }
   }, [sortOption, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      setFilterPreference(filters);
+    }
+  }, [filters, isInitialized]);
 
   const { data, error, isLoading, mutate } = useSWR<MongoTodoList[]>(
     '/api/todolists',
@@ -58,11 +77,18 @@ export function useTodoLists() {
     }
   );
 
-  // Apply sorting to the todo lists
-  const sortedTodoLists = useMemo(() => {
+  // Apply filtering and sorting to the todo lists
+  const processedTodoLists = useMemo(() => {
     if (!data) return data;
-    return sortTodoLists(data, sortOption);
-  }, [data, sortOption]);
+
+    // First filter, then sort
+    const filteredLists = filterTodoLists(data, filters);
+    return sortTodoLists(filteredLists, sortOption);
+  }, [data, filters, sortOption]);
+
+  // Get counts for display
+  const totalCount = data?.length || 0;
+  const filteredCount = processedTodoLists?.length || 0;
 
   const deleteTodoList = async (todoListId: string): Promise<void> => {
     const response = await fetch(`/api/todolists/${todoListId}`, {
@@ -79,12 +105,16 @@ export function useTodoLists() {
   };
 
   return {
-    todoLists: sortedTodoLists,
+    todoLists: processedTodoLists,
+    totalCount,
+    filteredCount,
     isLoading,
     error,
     mutate, // For manual revalidation
     deleteTodoList,
     sortOption,
     setSortOption,
+    filters,
+    setFilters,
   };
 }

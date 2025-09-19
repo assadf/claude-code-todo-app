@@ -26,12 +26,11 @@ Features here should be implemented and an update with [X] to indicate the featu
 - [x] Logged in User is able complete TODO items in the list.
 - [x] Logged in User is able delete TODO lists.
 - [x] Logged in User is able to to sort TODO lists in the dashboard alphabetically or by most recently updated/created
+- [ ] Logged in User is able filter TODO list from the main/home page for easier searching.
 
 # Planned
 
 Features are expected to be implemented in the future but should not be implemented until they are moved to the In Progress list.
-
-- [ ] Logged in User is able filter TODO list from the main/home page for easier searching.
 
 - [ ] Add deadlines to certain TODO items.
 - [ ] Send notifications via x days/hours before the TODO item's deadline date. the notification days/hour trigger should be configurable via a users settings page.
