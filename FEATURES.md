@@ -28,6 +28,7 @@ Features here should be implemented and an update with [X] to indicate the featu
 - [x] Logged in User is able to to sort TODO lists in the dashboard alphabetically or by most recently updated/created
 - [x] Logged in User is able filter TODO list from the main/home page for easier searching.
 - [x] Add deadlines to certain TODO items.
+- [x] User's Google Profile like Name, Email address and Picture profile is persisted in MongoDB and is linked to the todo lists.
 
 # Planned
 

@@ -1,6 +1,11 @@
 /**
  * @jest-environment node
  */
+
+// Set up environment variables before importing modules
+process.env.NEXTAUTH_SECRET =
+  'test-secret-that-is-at-least-32-characters-long-for-testing';
+
 import { NextRequest } from 'next/server';
 import { POST, GET } from './route';
 import { getServerSession } from 'next-auth/next';
@@ -13,6 +18,9 @@ jest.mock('next-auth/next');
 jest.mock('@/lib/mongoose');
 jest.mock('@/models/TodoList');
 jest.mock('@/models/TodoItem');
+jest.mock('@/lib/auth', () => ({
+  authOptions: {},
+}));
 
 const mockGetServerSession = getServerSession as jest.MockedFunction<
   typeof getServerSession
