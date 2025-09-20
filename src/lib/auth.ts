@@ -1,6 +1,8 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import crypto from 'crypto';
+import { User } from '@/models/User';
+import connectDB from './mongoose';
 
 // Validate NextAuth secret strength at startup
 function validateNextAuthSecret() {
@@ -43,6 +45,53 @@ export const authOptions: NextAuthOptions = {
     error: '/',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      try {
+        // Only handle Google provider accounts
+        if (account?.provider !== 'google') {
+          return true;
+        }
+
+        // Connect to database
+        await connectDB();
+
+        // Generate consistent user ID from Google ID
+        const consistentUserId = generateObjectIdFromGoogleId(
+          account.providerAccountId
+        );
+
+        // Check if user already exists using the consistent ID
+        const existingUser = await User.findById(consistentUserId);
+
+        if (existingUser) {
+          // Update existing user with latest profile information
+          await User.findByIdAndUpdate(
+            consistentUserId,
+            {
+              email: profile?.email,
+              name: profile?.name,
+              image: (profile as any)?.picture,
+              googleId: account.providerAccountId,
+            },
+            { new: true }
+          );
+        } else {
+          // Create new user with consistent ID
+          await User.create({
+            _id: consistentUserId,
+            email: profile?.email,
+            name: profile?.name,
+            image: (profile as any)?.picture,
+            googleId: account.providerAccountId,
+          });
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error handling Google sign-in:', error);
+        return false;
+      }
+    },
     async session({ session, token }) {
       if (session.user && token.googleId) {
         // Generate consistent ObjectID from Google ID
